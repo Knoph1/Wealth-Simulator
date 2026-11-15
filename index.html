@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kenyan IFB vs. MMF Wealth Simulator</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Chart.js for clean, responsive financial trajectory visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    /* Custom range slider styling for tactile financial controls */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      outline: none;
+      transition: background 0.2s;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #0f766e;
+      cursor: pointer;
+      border: 2px solid #ffffff;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.25);
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.12);
+      background: #0d9488;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #0f766e;
+      cursor: pointer;
+      border: 2px solid #ffffff;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.25);
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-teal-100 selection:text-teal-900">
+
+  <!-- Top Navigation / Header -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-md shrink-0">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 17l6-6 4 4 8-8M17 7h4v4" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold tracking-tight">Kenya Fixed-Income Wealth Simulator</h1>
+          <p class="text-xs text-slate-400">Tax-Exempt CBK Infrastructure Bond (IFB) vs. Money Market Fund (15% WHT)</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 self-start sm:self-auto">
+        <button id="resetBtn" type="button" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Reset Defaults
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Dashboard Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+
+    <!-- Top KPI Summary Cards -->
+    <section aria-label="Key Performance Indicators" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- KPI 1: Primary IFB Final Value -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-20 h-20 bg-emerald-50 rounded-bl-full -mr-4 -mt-4 pointer-events-none"></div>
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-semibold uppercase tracking-wider text-emerald-700" id="kpiIfbLabel">IFB Total Value (Reinvested)</span>
+          <span class="px-2 py-0.5 text-[11px] font-semibold bg-emerald-100 text-emerald-800 rounded-full">0% Tax</span>
+        </div>
+        <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1" id="kpiIfbValue">KES 1,877,139</div>
+        <p class="text-xs text-slate-500 mt-1.5" id="kpiIfbSub">Total interest: KES 1,377,139</p>
+      </div>
+
+      <!-- KPI 2: MMF Final Net Value -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-20 h-20 bg-amber-50 rounded-bl-full -mr-4 -mt-4 pointer-events-none"></div>
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-semibold uppercase tracking-wider text-amber-700">MMF Net Value</span>
+          <span class="px-2 py-0.5 text-[11px] font-semibold bg-amber-100 text-amber-800 rounded-full" id="kpiMmfNetBadge">8.93% Net</span>
+        </div>
+        <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1" id="kpiMmfValue">KES 1,215,914</div>
+        <p class="text-xs text-slate-500 mt-1.5" id="kpiMmfSub">After 15% WHT deduction</p>
+      </div>
+
+      <!-- KPI 3: Net Wealth Advantage -->
+      <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-5 shadow-sm">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-semibold uppercase tracking-wider text-teal-300">IFB Net Advantage</span>
+          <span class="px-2 py-0.5 text-[11px] font-semibold bg-teal-500/20 text-teal-200 border border-teal-400/30 rounded-full" id="kpiAdvantagePct">+54.4%</span>
+        </div>
+        <div class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-1" id="kpiAdvantageValue">+KES 661,225</div>
+        <p class="text-xs text-slate-300 mt-1.5" id="kpiAdvantageSub">Extra wealth created over MMF</p>
+      </div>
+
+      <!-- KPI 4: Tax Saved via IFB Exemption -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-20 h-20 bg-sky-50 rounded-bl-full -mr-4 -mt-4 pointer-events-none"></div>
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-semibold uppercase tracking-wider text-sky-700">WHT Tax Shielded</span>
+          <span class="px-2 py-0.5 text-[11px] font-semibold bg-sky-100 text-sky-800 rounded-full">15% Exempt</span>
+        </div>
+        <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1" id="kpiTaxSavedValue">KES 206,571</div>
+        <p class="text-xs text-slate-500 mt-1.5" id="kpiTaxSavedSub">Tax avoided on IFB earnings</p>
+      </div>
+    </section>
+
+    <!-- Main Interactive Workspace: Left Controls + Right Visualization -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- Left Control Panel (4 cols on lg) -->
+      <aside class="lg:col-span-4 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 sm:p-6 space-y-5">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h2 class="text-base font-bold text-slate-900">Simulation Parameters</h2>
+          <span class="text-xs font-medium text-slate-400">Live updates</span>
+        </div>
+
+        <!-- Control 1: Initial Principal -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label for="principalInput" class="text-xs font-semibold text-slate-700">Initial Lump Sum</label>
+            <div class="flex items-center bg-slate-100 rounded-lg px-2.5 py-1 border border-slate-200 focus-within:border-teal-600 focus-within:bg-white">
+              <span class="text-xs font-semibold text-slate-500 mr-1">KES</span>
+              <input type="number" id="principalInput" min="50000" max="50000000" step="10000" value="500000"
+                     class="w-24 text-right text-xs font-bold text-slate-900 bg-transparent focus:outline-none" />
+            </div>
+          </div>
+          <input type="range" id="principalSlider" min="50000" max="10000000" step="50000" value="500000" />
+          <div class="flex justify-between text-[11px] text-slate-400">
+            <span>KES 50K</span>
+            <span>KES 5M</span>
+            <span>KES 10M</span>
+          </div>
+        </div>
+
+        <!-- Control 2: Time Horizon -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label for="yearsSlider" class="text-xs font-semibold text-slate-700">Investment Horizon</label>
+            <span class="text-xs font-bold text-teal-800 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-lg" id="yearsDisplay">10 Years</span>
+          </div>
+          <input type="range" id="yearsSlider" min="1" max="20" step="1" value="10" />
+          <div class="flex justify-between text-[11px] text-slate-400">
+            <span>1 Yr</span>
+            <span>10 Yrs</span>
+            <span>20 Yrs</span>
+          </div>
+        </div>
+
+        <!-- Control 3: IFB Coupon Rate -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label for="ifbRateSlider" class="text-xs font-semibold text-slate-700">IFB Coupon Rate (Tax-Free)</label>
+            <span class="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg" id="ifbRateDisplay">13.50% p.a.</span>
+          </div>
+          <input type="range" id="ifbRateSlider" min="8.0" max="18.0" step="0.1" value="13.5" />
+          <div class="flex justify-between text-[11px] text-slate-400">
+            <span>8.0%</span>
+            <span>13.5%</span>
+            <span>18.0%</span>
+          </div>
+        </div>
+
+        <!-- Control 4: MMF Gross Yield -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label for="mmfRateSlider" class="text-xs font-semibold text-slate-700">MMF Gross Yield</label>
+            <div class="text-right">
+              <span class="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg" id="mmfRateDisplay">10.50% gross</span>
+            </div>
+          </div>
+          <input type="range" id="mmfRateSlider" min="5.0" max="16.0" step="0.1" value="10.5" />
+          <div class="flex justify-between text-[11px] text-slate-500">
+            <span>5.0%</span>
+            <span class="font-medium text-amber-700" id="mmfNetSubtext">Effective Net: 8.93% p.a.</span>
+            <span>16.0%</span>
+          </div>
+        </div>
+
+        <!-- Control 5: Monthly Top-Up Contribution -->
+        <div class="space-y-2 pt-1 border-t border-slate-100">
+          <div class="flex items-center justify-between">
+            <label for="monthlyInput" class="text-xs font-semibold text-slate-700">Monthly Top-Up</label>
+            <div class="flex items-center bg-slate-100 rounded-lg px-2.5 py-1 border border-slate-200 focus-within:border-teal-600 focus-within:bg-white">
+              <span class="text-xs font-semibold text-slate-500 mr-1">KES</span>
+              <input type="number" id="monthlyInput" min="0" max="1000000" step="1000" value="0"
+                     class="w-24 text-right text-xs font-bold text-slate-900 bg-transparent focus:outline-none" />
+            </div>
+          </div>
+          <input type="range" id="monthlySlider" min="0" max="100000" step="2500" value="0" />
+          <div class="flex justify-between text-[11px] text-slate-400">
+            <span>KES 0</span>
+            <span>KES 50K/mo</span>
+            <span>KES 100K/mo</span>
+          </div>
+        </div>
+
+        <!-- Control 6: IFB Coupon Handling Toggle -->
+        <div class="pt-3 border-t border-slate-100">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <span class="text-xs font-bold text-slate-800 block">Primary IFB Mode</span>
+              <p class="text-[11px] text-slate-500 leading-relaxed mt-0.5" id="reinvestHelpText">
+                Semi-annual coupons are reinvested at the IFB rate (compounding), vs. paid out to your bank account as simple income.
+              </p>
+            </div>
+            <button id="reinvestToggle" type="button" role="switch" aria-checked="true"
+                    class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-emerald-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 mt-0.5">
+              <span id="reinvestKnob" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-5"></span>
+            </button>
+          </div>
+          <div class="mt-2.5 grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+            <button type="button" id="modeReinvestBtn" class="py-1.5 px-2 rounded-lg bg-white text-emerald-800 shadow-sm transition">
+              Reinvest Coupons
+            </button>
+            <button type="button" id="modePayoutBtn" class="py-1.5 px-2 rounded-lg text-slate-600 hover:text-slate-900 transition">
+              Cash Payout
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right Chart & Analytical Insights (8 cols on lg) -->
+      <div class="lg:col-span-8 space-y-6">
+        <!-- Interactive Chart Card -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 sm:p-6">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+            <div>
+              <h2 class="text-base sm:text-lg font-bold text-slate-900">Portfolio Growth Trajectory (KES)</h2>
+              <p class="text-xs text-slate-500">Comparing semi-annual IFB compounding, IFB simple payout and monthly MMF compounding (net of 15% WHT)</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 text-xs font-medium">
+              <span class="inline-flex items-center gap-1.5 text-slate-700">
+                <span class="w-3 h-3 rounded-full bg-emerald-600 inline-block"></span> IFB (Reinvested)
+              </span>
+              <span class="inline-flex items-center gap-1.5 text-slate-700">
+                <span class="w-3 h-3 rounded-full bg-teal-400 inline-block"></span> IFB (Cash Payout)
+              </span>
+              <span class="inline-flex items-center gap-1.5 text-slate-700">
+                <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span> MMF (Net)
+              </span>
+            </div>
+          </div>
+
+          <!-- Responsive Chart Wrapper -->
+          <div class="relative w-full h-72 sm:h-80 md:h-96">
+            <canvas id="growthChart"></canvas>
+          </div>
+
+          <!-- Methodology & Real-World Mechanics Note -->
+          <div class="mt-5 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-600">
+            <div class="bg-emerald-50/70 border border-emerald-100 rounded-xl p-3">
+              <span class="font-bold text-emerald-900 block mb-0.5">How CBK Infrastructure Bonds Work:</span>
+              IFBs pay coupons every <strong>6 months (semi-annually)</strong> directly to your bank account with <strong>0% Withholding Tax</strong>. Because CBK does not auto-reinvest coupons, manual reinvestment (via secondary market or sweep into high-yield instruments) unlocks the top green curve.
+            </div>
+            <div class="bg-amber-50/70 border border-amber-100 rounded-xl p-3">
+              <span class="font-bold text-amber-900 block mb-0.5">How Kenyan MMFs Work:</span>
+              MMFs accrue interest daily and <strong>compound monthly</strong>, automatically deducting <strong>15% final Withholding Tax</strong> at month-end before crediting your unit balance. Top-ups are seamlessly invested on any business day.
+            </div>
+          </div>
+        </div>
+
+        <!-- Year-by-Year Breakdown Table -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div class="p-5 sm:px-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Year-by-Year Projection Schedule</h3>
+              <p class="text-xs text-slate-500">All figures in Kenya Shillings (KES), rounded to nearest shilling</p>
+            </div>
+            <button id="copyTableBtn" type="button" class="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span id="copyBtnText">Copy CSV Data</span>
+            </button>
+          </div>
+          <div class="overflow-x-auto max-h-96">
+            <table class="w-full text-left border-collapse">
+              <thead class="bg-slate-50 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <tr>
+                  <th class="py-3 px-4">Year</th>
+                  <th class="py-3 px-4 text-right">Total Contributed</th>
+                  <th class="py-3 px-4 text-right text-emerald-700">IFB (Reinvested)</th>
+                  <th class="py-3 px-4 text-right text-teal-700">IFB (Cash Payout)</th>
+                  <th class="py-3 px-4 text-right text-amber-700">MMF (Net 15% WHT)</th>
+                  <th class="py-3 px-4 text-right text-slate-800">Net Advantage</th>
+                </tr>
+              </thead>
+              <tbody id="scheduleBody" class="divide-y divide-slate-100 text-xs sm:text-sm font-medium text-slate-700">
+                <!-- Populated dynamically via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    /**
+     * Kenyan IFB vs. MMF Financial Simulation Engine
+     * Models:
+     * 1. IFB (Reinvested): Semi-annual compounding at tax-free coupon rate (0% WHT).
+     *    Monthly contributions accumulate into semi-annual tranches so new capital compounds every 6 months.
+     * 2. IFB (Cash Payout / Simple): Principal + cumulative semi-annual coupons paid out in cash without compounding.
+     * 3. MMF (Net): Monthly compounding at (Gross Yield * (1 - 0.15)), reflecting Kenya's 15% final Withholding Tax.
+     */
+    (function () {
+      const WHT_RATE = 0.15;
+
+      // Application State
+      const state = {
+        principal: 500000,
+        years: 10,
+        ifbRate: 13.5,
+        mmfGrossRate: 10.5,
+        monthlyContribution: 0,
+        reinvestCoupons: true
+      };
+
+      // DOM Elements
+      const els = {
+        principalInput: document.getElementById('principalInput'),
+        principalSlider: document.getElementById('principalSlider'),
+        yearsSlider: document.getElementById('yearsSlider'),
+        yearsDisplay: document.getElementById('yearsDisplay'),
+        ifbRateSlider: document.getElementById('ifbRateSlider'),
+        ifbRateDisplay: document.getElementById('ifbRateDisplay'),
+        mmfRateSlider: document.getElementById('mmfRateSlider'),
+        mmfRateDisplay: document.getElementById('mmfRateDisplay'),
+        mmfNetSubtext: document.getElementById('mmfNetSubtext'),
+        monthlyInput: document.getElementById('monthlyInput'),
+        monthlySlider: document.getElementById('monthlySlider'),
+        reinvestToggle: document.getElementById('reinvestToggle'),
+        reinvestKnob: document.getElementById('reinvestKnob'),
+        modeReinvestBtn: document.getElementById('modeReinvestBtn'),
+        modePayoutBtn: document.getElementById('modePayoutBtn'),
+        resetBtn: document.getElementById('resetBtn'),
+        copyTableBtn: document.getElementById('copyTableBtn'),
+        copyBtnText: document.getElementById('copyBtnText'),
+
+        // KPIs
+        kpiIfbLabel: document.getElementById('kpiIfbLabel'),
+        kpiIfbValue: document.getElementById('kpiIfbValue'),
+        kpiIfbSub: document.getElementById('kpiIfbSub'),
+        kpiMmfNetBadge: document.getElementById('kpiMmfNetBadge'),
+        kpiMmfValue: document.getElementById('kpiMmfValue'),
+        kpiMmfSub: document.getElementById('kpiMmfSub'),
+        kpiAdvantagePct: document.getElementById('kpiAdvantagePct'),
+        kpiAdvantageValue: document.getElementById('kpiAdvantageValue'),
+        kpiAdvantageSub: document.getElementById('kpiAdvantageSub'),
+        kpiTaxSavedValue: document.getElementById('kpiTaxSavedValue'),
+        kpiTaxSavedSub: document.getElementById('kpiTaxSavedSub'),
+
+        // Table
+        scheduleBody: document.getElementById('scheduleBody')
+      };
+
+      let growthChart = null;
+      let latestSchedule = [];
+
+      // Format number as KES currency
+      function formatKES(amount) {
+        return 'KES ' + Math.round(amount).toLocaleString('en-KE');
+      }
+
+      function formatCompactKES(amount) {
+        if (Math.abs(amount) >= 1e6) {
+          return 'KES ' + (amount / 1e6).toFixed(2) + 'M';
+        }
+        if (Math.abs(amount) >= 1e3) {
+          return 'KES ' + (amount / 1e3).toFixed(0) + 'K';
+        }
+        return 'KES ' + Math.round(amount);
+      }
+
+      /**
+       * Core monthly/semi-annual simulation loop
+       */
+      function runSimulation() {
+        const P = Math.max(0, Number(state.principal) || 0);
+        const years = Math.max(1, Math.min(30, Number(state.years) || 10));
+        const rIfb = (Number(state.ifbRate) || 0) / 100;
+        const rMmfGross = (Number(state.mmfGrossRate) || 0) / 100;
+        const rMmfNet = rMmfGross * (1 - WHT_RATE);
+        const monthlyTopUp = Math.max(0, Number(state.monthlyContribution) || 0);
+
+        const totalMonths = years * 12;
+
+        // Trackers
+        let totalContributed = P;
+
+        // 1. IFB Reinvested (Semi-annual coupon compounding)
+        // Monthly contributions added during a 6-month window earn pro-rata coupon at the semi-annual date
+        // and then compound into the bond principal for future periods.
+        let ifbReinvestedBalance = P;
+        let pendingHalfYearContribsReinv = 0;
+        let pendingHalfYearProRataInterestReinv = 0;
+
+        // 2. IFB Simple Payout (Coupons paid out to bank account, never reinvested)
+        let ifbSimplePrincipal = P;
+        let ifbCumulativeCashCoupons = 0;
+        let pendingHalfYearContribsSimple = 0;
+        let pendingHalfYearProRataInterestSimple = 0;
+
+        // 3. MMF Net (Monthly compounding after 15% WHT)
+        let mmfNetBalance = P;
+        let mmfCumulativeTaxPaid = 0;
+        const monthlyMmfGrossRate = rMmfGross / 12;
+
+        const schedule = [
+          {
+            year: 0,
+            contributed: P,
+            ifbReinvested: P,
+            ifbPayoutTotal: P,
+            mmfNet: P,
+            mmfTaxPaid: 0
+          }
+        ];
+
+        for (let m = 1; m <= totalMonths; m++) {
+          // Add monthly contribution at start of month
+          if (monthlyTopUp > 0) {
+            totalContributed += monthlyTopUp;
+            mmfNetBalance += monthlyTopUp;
+
+            // Months remaining in current 6-month coupon period (6 down to 1)
+            const monthsInPeriod = 6 - ((m - 1) % 6);
+            const proRataFactor = monthsInPeriod / 12;
+
+            pendingHalfYearContribsReinv += monthlyTopUp;
+            pendingHalfYearProRataInterestReinv += monthlyTopUp * rIfb * proRataFactor;
+
+            pendingHalfYearContribsSimple += monthlyTopUp;
+            pendingHalfYearProRataInterestSimple += monthlyTopUp * rIfb * proRataFactor;
+          }
+
+          // MMF monthly compounding & 15% WHT deduction
+          const mmfGrossInterest = mmfNetBalance * monthlyMmfGrossRate;
+          const mmfTax = mmfGrossInterest * WHT_RATE;
+          const mmfNetInterest = mmfGrossInterest - mmfTax;
+          mmfNetBalance += mmfNetInterest;
+          mmfCumulativeTaxPaid += mmfTax;
+
+          // Semi-annual IFB coupon event (every 6 months)
+          if (m % 6 === 0) {
+            // Reinvested IFB: 6-month coupon on existing balance + pro-rata interest on new top-ups
+            const semiAnnualCouponReinv = (ifbReinvestedBalance * (rIfb / 2)) + pendingHalfYearProRataInterestReinv;
+            ifbReinvestedBalance += pendingHalfYearContribsReinv + semiAnnualCouponReinv;
+            pendingHalfYearContribsReinv = 0;
+            pendingHalfYearProRataInterestReinv = 0;
+
+            // Simple Payout IFB: 6-month coupon paid to bank account; only contributions add to principal
+            const semiAnnualCouponSimple = (ifbSimplePrincipal * (rIfb / 2)) + pendingHalfYearProRataInterestSimple;
+            ifbCumulativeCashCoupons += semiAnnualCouponSimple;
+            ifbSimplePrincipal += pendingHalfYearContribsSimple;
+            pendingHalfYearContribsSimple = 0;
+            pendingHalfYearProRataInterestSimple = 0;
+          }
+
+          // Record end-of-year snapshot
+          if (m % 12 === 0) {
+            const yr = m / 12;
+            schedule.push({
+              year: yr,
+              contributed: totalContributed,
+              ifbReinvested: ifbReinvestedBalance,
+              ifbPayoutTotal: ifbSimplePrincipal + ifbCumulativeCashCoupons,
+              mmfNet: mmfNetBalance,
+              mmfTaxPaid: mmfCumulativeTaxPaid
+            });
+          }
+        }
+
+        latestSchedule = schedule;
+        updateUI(schedule, rMmfNet);
+      }
+
+      /**
+       * Update KPIs, Chart and Data Table
+       */
+      function updateUI(schedule, rMmfNet) {
+        const finalRow = schedule[schedule.length - 1];
+        const activeIfbFinal = state.reinvestCoupons ? finalRow.ifbReinvested : finalRow.ifbPayoutTotal;
+        const activeIfbInterest = activeIfbFinal - finalRow.contributed;
+        const mmfNetInterest = finalRow.mmfNet - finalRow.contributed;
+        const netAdvantage = activeIfbFinal - finalRow.mmfNet;
+        const advantagePct = finalRow.mmfNet > 0 ? (netAdvantage / finalRow.mmfNet) * 100 : 0;
+
+        // Tax saved: 15% WHT that would have been charged on the IFB's total interest earnings
+        const taxSaved = activeIfbInterest * WHT_RATE;
+
+        // Update KPI Cards
+        els.kpiIfbLabel.textContent = state.reinvestCoupons
+          ? 'IFB Total (Reinvested)'
+          : 'IFB Total (Cash Payout)';
+        els.kpiIfbValue.textContent = formatKES(activeIfbFinal);
+        els.kpiIfbSub.textContent = `Tax-free interest: ${formatKES(activeIfbInterest)}`;
+
+        els.kpiMmfNetBadge.textContent = `${(rMmfNet * 100).toFixed(2)}% Net`;
+        els.kpiMmfValue.textContent = formatKES(finalRow.mmfNet);
+        els.kpiMmfSub.textContent = `Net interest: ${formatKES(mmfNetInterest)} (${formatKES(finalRow.mmfTaxPaid)} tax paid)`;
+
+        const sign = netAdvantage >= 0 ? '+' : '';
+        els.kpiAdvantagePct.textContent = `${sign}${advantagePct.toFixed(1)}%`;
+        els.kpiAdvantageValue.textContent = `${sign}${formatKES(netAdvantage)}`;
+        els.kpiAdvantageSub.textContent = netAdvantage >= 0
+          ? `Extra wealth over MMF in ${state.years} yrs`
+          : `MMF leads IFB in ${state.years} yrs`;
+
+        els.kpiTaxSavedValue.textContent = formatKES(taxSaved);
+        els.kpiTaxSavedSub.textContent = `15% WHT exempted on IFB gains`;
+
+        // Update Table
+        renderTable(schedule);
+
+        // Update Chart
+        renderChart(schedule);
+      }
+
+      /**
+       * Render Year-by-Year Schedule Table
+       */
+      function renderTable(schedule) {
+        const rowsHtml = schedule.map((row) => {
+          const activeIfb = state.reinvestCoupons ? row.ifbReinvested : row.ifbPayoutTotal;
+          const diff = activeIfb - row.mmfNet;
+          const diffClass = diff >= 0 ? 'text-emerald-700 font-bold' : 'text-amber-700 font-bold';
+          const diffPrefix = diff >= 0 ? '+' : '';
+
+          return `
+            <tr class="hover:bg-slate-50/90 transition-colors">
+              <td class="py-2.5 px-4 font-semibold text-slate-900">Year ${row.year}</td>
+              <td class="py-2.5 px-4 text-right text-slate-500">${formatKES(row.contributed)}</td>
+              <td class="py-2.5 px-4 text-right font-semibold ${state.reinvestCoupons ? 'text-emerald-700 bg-emerald-50/40' : 'text-slate-700'}">${formatKES(row.ifbReinvested)}</td>
+              <td class="py-2.5 px-4 text-right font-semibold ${!state.reinvestCoupons ? 'text-teal-700 bg-teal-50/40' : 'text-slate-600'}">${formatKES(row.ifbPayoutTotal)}</td>
+              <td class="py-2.5 px-4 text-right text-amber-800">${formatKES(row.mmfNet)}</td>
+              <td class="py-2.5 px-4 text-right ${diffClass}">${diffPrefix}${formatKES(diff)}</td>
+            </tr>
+          `;
+        }).join('');
+
+        els.scheduleBody.innerHTML = rowsHtml;
+      }
+
+      /**
+       * Render / Update Chart.js Multi-Series Line Chart
+       */
+      function renderChart(schedule) {
+        const labels = schedule.map((r) => `Yr ${r.year}`);
+        const dataIfbReinv = schedule.map((r) => Math.round(r.ifbReinvested));
+        const dataIfbSimple = schedule.map((r) => Math.round(r.ifbPayoutTotal));
+        const dataMmfNet = schedule.map((r) => Math.round(r.mmfNet));
+        const dataPrincipal = schedule.map((r) => Math.round(r.contributed));
+
+        const ctx = document.getElementById('growthChart').getContext('2d');
+
+        if (growthChart) {
+          growthChart.data.labels = labels;
+          growthChart.data.datasets[0].data = dataIfbReinv;
+          growthChart.data.datasets[0].borderWidth = state.reinvestCoupons ? 3.5 : 2;
+          growthChart.data.datasets[0].borderDash = state.reinvestCoupons ? [] : [5, 5];
+
+          growthChart.data.datasets[1].data = dataIfbSimple;
+          growthChart.data.datasets[1].borderWidth = !state.reinvestCoupons ? 3.5 : 2;
+          growthChart.data.datasets[1].borderDash = !state.reinvestCoupons ? [] : [4, 4];
+
+          growthChart.data.datasets[2].data = dataMmfNet;
+          growthChart.data.datasets[3].data = dataPrincipal;
+          growthChart.update('none');
+          return;
+        }
+
+        growthChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: 'IFB (Coupons Reinvested)',
+                data: dataIfbReinv,
+                borderColor: '#059669',
+                backgroundColor: 'rgba(5, 150, 105, 0.08)',
+                borderWidth: 3.5,
+                tension: 0.25,
+                fill: true,
+                pointRadius: 3,
+                pointHoverRadius: 6
+              },
+              {
+                label: 'IFB (Cash Payout + Principal)',
+                data: dataIfbSimple,
+                borderColor: '#14b8a6',
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                borderDash: [4, 4],
+                tension: 0.15,
+                fill: false,
+                pointRadius: 2.5,
+                pointHoverRadius: 5
+              },
+              {
+                label: 'MMF (Net After 15% WHT)',
+                data: dataMmfNet,
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.06)',
+                borderWidth: 3,
+                tension: 0.25,
+                fill: true,
+                pointRadius: 3,
+                pointHoverRadius: 6
+              },
+              {
+                label: 'Total Principal Contributed',
+                data: dataPrincipal,
+                borderColor: '#94a3b8',
+                backgroundColor: 'transparent',
+                borderWidth: 1.5,
+                borderDash: [2, 3],
+                tension: 0,
+                fill: false,
+                pointRadius: 0,
+                pointHoverRadius: 4
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false
+            },
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                backgroundColor: '#0f172a',
+                titleColor: '#f8fafc',
+                bodyColor: '#e2e8f0',
+                padding: 12,
+                cornerRadius: 10,
+                callbacks: {
+                  label: function (context) {
+                    return ` ${context.dataset.label}: KES ${context.parsed.y.toLocaleString('en-KE')}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: {
+                  display: false
+                },
+                ticks: {
+                  color: '#64748b',
+                  font: { size: 11, weight: '500' }
+                }
+              },
+              y: {
+                border: { display: false },
+                grid: {
+                  color: '#f1f5f9'
+                },
+                ticks: {
+                  color: '#64748b',
+                  font: { size: 11, weight: '500' },
+                  callback: function (value) {
+                    return formatCompactKES(value);
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      /**
+       * Sync UI Controls & Bind Events
+       */
+      function syncControlsUI() {
+        els.principalInput.value = state.principal;
+        els.principalSlider.value = Math.min(10000000, state.principal);
+
+        els.yearsSlider.value = state.years;
+        els.yearsDisplay.textContent = `${state.years} ${state.years === 1 ? 'Year' : 'Years'}`;
+
+        els.ifbRateSlider.value = state.ifbRate;
+        els.ifbRateDisplay.textContent = `${state.ifbRate.toFixed(2)}% p.a.`;
+
+        els.mmfRateSlider.value = state.mmfGrossRate;
+        els.mmfRateDisplay.textContent = `${state.mmfGrossRate.toFixed(2)}% gross`;
+        const netMmf = state.mmfGrossRate * (1 - WHT_RATE);
+        els.mmfNetSubtext.textContent = `Effective Net: ${netMmf.toFixed(2)}% p.a.`;
+
+        els.monthlyInput.value = state.monthlyContribution;
+        els.monthlySlider.value = Math.min(100000, state.monthlyContribution);
+
+        // Toggle visual states
+        els.reinvestToggle.setAttribute('aria-checked', String(state.reinvestCoupons));
+        if (state.reinvestCoupons) {
+          els.reinvestToggle.classList.remove('bg-slate-300');
+          els.reinvestToggle.classList.add('bg-emerald-600');
+          els.reinvestKnob.classList.add('translate-x-5');
+          els.reinvestKnob.classList.remove('translate-x-0');
+
+          els.modeReinvestBtn.className = 'py-1.5 px-2 rounded-lg bg-white text-emerald-800 shadow-sm transition';
+          els.modePayoutBtn.className = 'py-1.5 px-2 rounded-lg text-slate-600 hover:text-slate-900 transition';
+        } else {
+          els.reinvestToggle.classList.remove('bg-emerald-600');
+          els.reinvestToggle.classList.add('bg-slate-300');
+          els.reinvestKnob.classList.remove('translate-x-5');
+          els.reinvestKnob.classList.add('translate-x-0');
+
+          els.modePayoutBtn.className = 'py-1.5 px-2 rounded-lg bg-white text-teal-800 shadow-sm transition';
+          els.modeReinvestBtn.className = 'py-1.5 px-2 rounded-lg text-slate-600 hover:text-slate-900 transition';
+        }
+      }
+
+      function setReinvestMode(isReinvest) {
+        state.reinvestCoupons = Boolean(isReinvest);
+        syncControlsUI();
+        runSimulation();
+      }
+
+      // Event Listeners
+      els.principalSlider.addEventListener('input', (e) => {
+        state.principal = Number(e.target.value);
+        syncControlsUI();
+        runSimulation();
+      });
+
+      els.principalInput.addEventListener('input', (e) => {
+        const val = Math.max(0, Number(e.target.value) || 0);
+        state.principal = val;
+        els.principalSlider.value = Math.min(10000000, val);
+        runSimulation();
+      });
+
+      els.yearsSlider.addEventListener('input', (e) => {
+        state.years = Number(e.target.value);
+        syncControlsUI();
+        runSimulation();
+      });
+
+      els.ifbRateSlider.addEventListener('input', (e) => {
+        state.ifbRate = Number(e.target.value);
+        syncControlsUI();
+        runSimulation();
+      });
+
+      els.mmfRateSlider.addEventListener('input', (e) => {
+        state.mmfGrossRate = Number(e.target.value);
+        syncControlsUI();
+        runSimulation();
+      });
+
+      els.monthlySlider.addEventListener('input', (e) => {
+        state.monthlyContribution = Number(e.target.value);
+        syncControlsUI();
+        runSimulation();
+      });
+
+      els.monthlyInput.addEventListener('input', (e) => {
+        const val = Math.max(0, Number(e.target.value) || 0);
+        state.monthlyContribution = val;
+        els.monthlySlider.value = Math.min(100000, val);
+        runSimulation();
+      });
+
+      els.reinvestToggle.addEventListener('click', () => setReinvestMode(!state.reinvestCoupons));
+      els.modeReinvestBtn.addEventListener('click', () => setReinvestMode(true));
+      els.modePayoutBtn.addEventListener('click', () => setReinvestMode(false));
+
+      els.resetBtn.addEventListener('click', () => {
+        state.principal = 500000;
+        state.years = 10;
+        state.ifbRate = 13.5;
+        state.mmfGrossRate = 10.5;
+        state.monthlyContribution = 0;
+        state.reinvestCoupons = true;
+        syncControlsUI();
+        runSimulation();
+      });
+
+      // Copy CSV data using execCommand fallback for iFrame safety
+      els.copyTableBtn.addEventListener('click', () => {
+        try {
+          const headers = ['Year', 'Total Contributed (KES)', 'IFB Reinvested (KES)', 'IFB Cash Payout (KES)', 'MMF Net After 15% WHT (KES)'];
+          const csvLines = [headers.join(',')];
+          latestSchedule.forEach((r) => {
+            csvLines.push([
+              r.year,
+              Math.round(r.contributed),
+              Math.round(r.ifbReinvested),
+              Math.round(r.ifbPayoutTotal),
+              Math.round(r.mmfNet)
+            ].join(','));
+          });
+
+          const tempTextArea = document.createElement('textarea');
+          tempTextArea.value = csvLines.join('\n');
+          tempTextArea.style.position = 'fixed';
+          tempTextArea.style.opacity = '0';
+          document.body.appendChild(tempTextArea);
+          tempTextArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempTextArea);
+
+          els.copyBtnText.textContent = 'Copied CSV!';
+          setTimeout(() => {
+            els.copyBtnText.textContent = 'Copy CSV Data';
+          }, 2000);
+        } catch (err) {
+          console.error('Copy failed:', err);
+        }
+      });
+
+      // Initialize on load
+      window.addEventListener('DOMContentLoaded', () => {
+        syncControlsUI();
+        runSimulation();
+      });
+    })();
+  </script>
+</body>
+</html>
